@@ -13,6 +13,8 @@ const entitiesPanel = document.getElementById('entitiesPanel');
 // Store current entities for reference
 let currentEntities = [];
 let debounceTimer = null;
+let lastAnalyzedText = ''; // Cache last analyzed text to avoid duplicate calls
+let isAnalyzing = false; // Prevent concurrent API calls
 
 /**
  * Debounce function - delays execution until after wait time
@@ -152,8 +154,21 @@ async function lintText(text) {
         currentEntities = [];
         highlightLayer.innerHTML = escapeHtml(text);
         displayEntities([]);
+        lastAnalyzedText = text;
         return;
     }
+    
+    // Skip if already analyzing or text hasn't changed
+    if (isAnalyzing || text === lastAnalyzedText) {
+        return;
+    }
+    
+    isAnalyzing = true;
+    lastAnalyzedText = text;
+    
+    // Show analyzing indicator
+    analyzeBtn.textContent = 'Analyzing...';
+    analyzeBtn.disabled = true;
     
     try {
         const response = await fetch('/lint', {
@@ -175,19 +190,30 @@ async function lintText(text) {
             currentEntities = data.entities;
             createHighlightOverlay(text, data.entities);
             displayEntities(data.entities);
+            
+            // Log cache status for debugging
+            if (data.cached) {
+                console.log('✓ Result from cache');
+            } else {
+                console.log('→ Fresh analysis from Bedrock');
+            }
         }
         
     } catch (error) {
         console.error('Linting error:', error);
+    } finally {
+        isAnalyzing = false;
+        analyzeBtn.textContent = 'Analyze Text';
+        analyzeBtn.disabled = false;
     }
 }
 
 /**
- * Debounced lint function (500ms delay)
+ * Debounced lint function (1500ms delay - increased for better performance)
  */
 const debouncedLint = debounce((text) => {
     lintText(text);
-}, 500);
+}, 1500);
 
 /**
  * Handle text editor input
@@ -196,8 +222,11 @@ textEditor.addEventListener('input', () => {
     const text = textEditor.value;
     updateCounts();
     
-    // Update highlight layer immediately with plain text
-    highlightLayer.innerHTML = escapeHtml(text);
+    // Keep existing highlights while typing (don't clear them)
+    // Only update if we don't have highlights yet
+    if (currentEntities.length === 0) {
+        highlightLayer.innerHTML = escapeHtml(text);
+    }
     
     // Trigger debounced lint
     debouncedLint(text);

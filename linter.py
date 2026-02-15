@@ -10,20 +10,32 @@ class BedrockLinter:
     and suggest indigenous synonyms with cultural context.
     """
     
-    def __init__(self, region_name: str = 'us-east-1'):
+    def __init__(self, region_name: str = 'us-east-1', profile_name: str = None):
         """
         Initialize the Bedrock client.
-        Uses AWS credentials from ~/.aws/credentials (default profile)
+        Uses AWS credentials from ~/.aws/credentials
         
         Args:
             region_name: AWS region for Bedrock service (default: us-east-1)
+            profile_name: AWS profile name from ~/.aws/credentials (default: None uses default profile)
         """
         self.region_name = region_name
-        # boto3 will automatically use credentials from ~/.aws/credentials
-        self.bedrock_runtime = boto3.client(
-            service_name='bedrock-runtime',
-            region_name=region_name
-        )
+        self.profile_name = profile_name
+        
+        # Create session with profile if specified
+        if profile_name:
+            session = boto3.Session(profile_name=profile_name)
+            self.bedrock_runtime = session.client(
+                service_name='bedrock-runtime',
+                region_name=region_name
+            )
+        else:
+            # boto3 will automatically use credentials from ~/.aws/credentials (default profile)
+            self.bedrock_runtime = boto3.client(
+                service_name='bedrock-runtime',
+                region_name=region_name
+            )
+        
         self.model_id = 'anthropic.claude-3-sonnet-20240229-v1:0'
     
     def _construct_prompt(self, text: str) -> str:
