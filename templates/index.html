@@ -9,64 +9,115 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1 class="logo">Mangolint</h1>
-            <p class="tagline">Cultural Context Linter</p>
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="logo">🥭 Mangolint</h1>
+                    <p class="tagline">Discover cultural authenticity in your text</p>
+                </div>
+                <button class="btn-analyze" id="analyzeBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    Analyze Text
+                </button>
+            </div>
         </header>
         
         <div class="main-content">
-            <div class="editor-section">
-                <!-- Brand Statement Section -->
-                <div class="brand-statement-section" id="brandStatementSection" style="display: none;">
-                    <div class="brand-statement-header">
-                        <h3>✨ Enhanced Brand Statement</h3>
-                        <button class="btn-copy" id="copyBrandBtn" title="Copy to clipboard">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
-                            Copy
-                        </button>
+            <!-- Brand Statement Section -->
+            <div class="brand-statement-section" id="brandStatementSection" style="display: none;">
+                <div class="brand-statement-header">
+                    <div class="brand-statement-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                        </svg>
+                        <span>Enhanced Brand Statement</span>
                     </div>
-                    <div class="brand-statement-content" id="brandStatementContent">
-                        <p class="loading">Generating enhanced description...</p>
-                    </div>
+                    <button class="btn-copy" id="copyBrandBtn" title="Copy to clipboard">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
                 </div>
-                
+                <div class="brand-statement-content" id="brandStatementContent">
+                    <p class="loading">Generating enhanced description...</p>
+                </div>
+            </div>
+
+            <!-- Editor Section -->
+            <div class="editor-section">
                 <div class="editor-header">
-                    <span class="editor-title">Text Editor</span>
-                    <button class="btn-analyze" id="analyzeBtn">Analyze Text</button>
+                    <span class="editor-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Your Text
+                    </span>
+                    <div class="editor-stats">
+                        <span id="charCount">0 characters</span>
+                        <span class="separator">•</span>
+                        <span id="wordCount">0 words</span>
+                        <span class="separator">•</span>
+                        <span id="entityCount">0 entities</span>
+                    </div>
                 </div>
                 <div class="editor-wrapper">
                     <textarea 
                         id="textEditor" 
                         class="text-editor" 
-                        placeholder="Start typing or paste your text here..."
+                        placeholder="Start typing or paste your text here... (e.g., 'Our pizza uses fresh mushrooms, peppers, and onions')"
                         spellcheck="false"
                     ></textarea>
                     <div id="highlightLayer" class="highlight-layer"></div>
                 </div>
-                <div class="editor-footer">
-                    <span id="charCount">0 characters</span>
-                    <span id="wordCount">0 words</span>
+                <div class="editor-hint">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    Hover over highlighted words to see cultural insights
                 </div>
             </div>
-            
-            <aside class="sidebar">
-                <div class="sidebar-header">
-                    <h2>Detected Cultural Entities</h2>
-                </div>
-                <div class="sidebar-content" id="entitiesPanel">
-                    <div class="empty-state">
-                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+
+            <!-- Cultural Entities Summary -->
+            <div class="entities-summary" id="entitiesSummary" style="display: none;">
+                <div class="summary-header">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 2L2 7l10 5 10-5-10-5z"/>
                             <path d="M2 17l10 5 10-5"/>
                             <path d="M2 12l10 5 10-5"/>
                         </svg>
-                        <p>No entities detected yet</p>
-                        <p class="empty-hint">Type or paste text and click "Analyze Text"</p>
-                    </div>
+                        Cultural Insights
+                    </h3>
+                    <span class="summary-count" id="summaryCount">0 ingredients found</span>
                 </div>
-            </aside>
+                <div class="summary-grid" id="summaryGrid">
+                    <!-- Entity cards will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip for hover -->
+    <div class="tooltip" id="tooltip" style="display: none;">
+        <div class="tooltip-content">
+            <div class="tooltip-header">
+                <span class="tooltip-term"></span>
+                <span class="tooltip-category"></span>
+            </div>
+            <div class="tooltip-body">
+                <p class="tooltip-description"></p>
+                <div class="tooltip-synonyms"></div>
+            </div>
         </div>
     </div>
     

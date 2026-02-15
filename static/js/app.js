@@ -1,27 +1,30 @@
 /**
- * Mangolint - Real-time Cultural Linting
- * Debounced text analysis with visual overlays
+ * Mangolint - Real-time Cultural Linting with Tooltips
  */
 
 const textEditor = document.getElementById('textEditor');
 const highlightLayer = document.getElementById('highlightLayer');
 const charCount = document.getElementById('charCount');
 const wordCount = document.getElementById('wordCount');
+const entityCount = document.getElementById('entityCount');
 const analyzeBtn = document.getElementById('analyzeBtn');
-const entitiesPanel = document.getElementById('entitiesPanel');
 const brandStatementSection = document.getElementById('brandStatementSection');
 const brandStatementContent = document.getElementById('brandStatementContent');
 const copyBrandBtn = document.getElementById('copyBrandBtn');
+const entitiesSummary = document.getElementById('entitiesSummary');
+const summaryCount = document.getElementById('summaryCount');
+const summaryGrid = document.getElementById('summaryGrid');
+const tooltip = document.getElementById('tooltip');
 
 // Store current entities for reference
 let currentEntities = [];
 let debounceTimer = null;
-let lastAnalyzedText = ''; // Cache last analyzed text to avoid duplicate calls
-let isAnalyzing = false; // Prevent concurrent API calls
-let currentBrandStatement = ''; // Store current brand statement for copying
+let lastAnalyzedText = '';
+let isAnalyzing = false;
+let currentBrandStatement = '';
 
 /**
- * Debounce function - delays execution until after wait time
+ * Debounce function
  */
 function debounce(func, wait) {
     return function executedFunction(...args) {
@@ -35,7 +38,7 @@ function debounce(func, wait) {
 }
 
 /**
- * Update character and word count
+ * Update character, word, and entity count
  */
 function updateCounts() {
     const text = textEditor.value;
@@ -44,6 +47,7 @@ function updateCounts() {
     
     charCount.textContent = `${chars} character${chars !== 1 ? 's' : ''}`;
     wordCount.textContent = `${words} word${words !== 1 ? 's' : ''}`;
+    entityCount.textContent = `${currentEntities.length} entit${currentEntities.length !== 1 ? 'ies' : 'y'}`;
 }
 
 /**
@@ -56,15 +60,73 @@ function escapeHtml(text) {
 }
 
 /**
- * Create highlighted overlay with underlined suggestions
+ * Show tooltip on hover
+ */
+function showTooltip(event, entity) {
+    const tooltipTerm = tooltip.querySelector('.tooltip-term');
+    const tooltipCategory = tooltip.querySelector('.tooltip-category');
+    const tooltipDescription = tooltip.querySelector('.tooltip-description');
+    const tooltipSynonyms = tooltip.querySelector('.tooltip-synonyms');
+    
+    // Set content
+    tooltipTerm.textContent = entity.text;
+    tooltipCategory.textContent = entity.category || 'ingredient';
+    tooltipDescription.textContent = entity.description || 'No description available';
+    
+    // Set synonyms (show first 2 for tooltip brevity)
+    const synonyms = entity.indigenous_synonyms || [];
+    tooltipSynonyms.innerHTML = synonyms.slice(0, 2).map(syn => `
+        <div class="tooltip-synonym">
+            <span class="tooltip-synonym-term">${escapeHtml(syn.term)}</span>
+            <span class="tooltip-synonym-lang">${escapeHtml(syn.language)}</span>
+            <div class="tooltip-synonym-culture">${escapeHtml(syn.culture)}</div>
+        </div>
+    `).join('') + (synonyms.length > 2 ? `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; margin-top: 8px;">+${synonyms.length - 2} more below</div>` : '');
+    
+    // Position tooltip
+    const rect = event.target.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+    let top = rect.bottom + 10;
+    
+    // Keep tooltip on screen
+    if (left < 10) left = 10;
+    if (left + tooltipRect.width > window.innerWidth - 10) {
+        left = window.innerWidth - tooltipRect.width - 10;
+    }
+    
+    // If tooltip would go off bottom, show above
+    if (top + tooltipRect.height > window.innerHeight - 10) {
+        top = rect.top - tooltipRect.height - 10;
+    }
+    
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+    tooltip.style.display = 'block';
+}
+
+/**
+ * Hide tooltip
+ */
+function hideTooltip() {
+    tooltip.style.display = 'none';
+}
+
+/**
+ * Create highlighted overlay with hover tooltips
  */
 function createHighlightOverlay(text, entities) {
+    // Always show the text in the highlight layer
     if (!entities || entities.length === 0) {
         highlightLayer.innerHTML = escapeHtml(text);
+        highlightLayer.style.color = 'var(--text-primary)';
         return;
     }
     
-    // Sort entities by their position in text (first occurrence)
+    highlightLayer.style.color = 'var(--text-primary)';
+    
+    // Sort entities by their position in text
     const sortedEntities = entities.map(entity => {
         const index = text.toLowerCase().indexOf(entity.text.toLowerCase());
         return { ...entity, index };
@@ -74,11 +136,10 @@ function createHighlightOverlay(text, entities) {
     let highlightedText = '';
     let lastIndex = 0;
     
-    // Track which positions have been highlighted to avoid duplicates
+    // Track highlighted ranges
     const highlightedRanges = [];
     
     sortedEntities.forEach(entity => {
-        // Find all occurrences of this entity
         const regex = new RegExp(`\\b${entity.text}\\b`, 'gi');
         let match;
         
@@ -86,7 +147,6 @@ function createHighlightOverlay(text, entities) {
             const start = match.index;
             const end = start + match[0].length;
             
-            // Check if this range overlaps with already highlighted ranges
             const overlaps = highlightedRanges.some(range => 
                 (start >= range.start && start < range.end) ||
                 (end > range.start && end <= range.end)
@@ -103,43 +163,45 @@ function createHighlightOverlay(text, entities) {
     
     // Build the highlighted HTML
     highlightedRanges.forEach(range => {
-        // Add text before the match
         if (lastIndex < range.start) {
             highlightedText += escapeHtml(text.substring(lastIndex, range.start));
         }
         
-        // Add highlighted match with underline
-        const synonymCount = range.entity.indigenous_synonyms?.length || 0;
-        const title = `${synonymCount} indigenous synonym${synonymCount !== 1 ? 's' : ''} available`;
-        
-        highlightedText += `<span class="highlighted-text type-${range.entity.type}" title="${title}" data-entity="${escapeHtml(range.entity.text)}">${escapeHtml(range.matchText)}</span>`;
+        const entityData = JSON.stringify(range.entity).replace(/"/g, '&quot;');
+        highlightedText += `<span class="highlighted-text type-${range.entity.type}" data-entity='${entityData}'>${escapeHtml(range.matchText)}</span>`;
         
         lastIndex = range.end;
     });
     
-    // Add remaining text
     if (lastIndex < text.length) {
         highlightedText += escapeHtml(text.substring(lastIndex));
     }
     
     highlightLayer.innerHTML = highlightedText;
     
-    // Add click handlers to highlighted spans
+    // Add hover handlers
     document.querySelectorAll('.highlighted-text').forEach(span => {
+        span.addEventListener('mouseenter', (e) => {
+            const entityData = JSON.parse(e.target.getAttribute('data-entity'));
+            showTooltip(e, entityData);
+        });
+        
+        span.addEventListener('mouseleave', hideTooltip);
+        
         span.addEventListener('click', (e) => {
-            const entityText = e.target.getAttribute('data-entity');
+            const entityText = JSON.parse(e.target.getAttribute('data-entity')).text;
             scrollToEntity(entityText);
         });
     });
 }
 
 /**
- * Scroll to entity in sidebar
+ * Scroll to entity in summary
  */
 function scrollToEntity(entityText) {
     const entityCards = document.querySelectorAll('.entity-card');
     entityCards.forEach(card => {
-        const cardText = card.querySelector('.entity-text')?.textContent;
+        const cardText = card.querySelector('.entity-name')?.textContent;
         if (cardText && cardText.toLowerCase() === entityText.toLowerCase()) {
             card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             card.style.animation = 'pulse 0.5s ease-in-out';
@@ -151,7 +213,106 @@ function scrollToEntity(entityText) {
 }
 
 /**
- * Generate brand statement from analyzed entities
+ * Display entities in summary grid
+ */
+function displayEntitiesSummary(entities) {
+    if (!entities || entities.length === 0) {
+        entitiesSummary.style.display = 'none';
+        return;
+    }
+    
+    entitiesSummary.style.display = 'block';
+    summaryCount.textContent = `${entities.length} ingredient${entities.length !== 1 ? 's' : ''} found`;
+    
+    summaryGrid.innerHTML = entities.map(entity => {
+        const synonyms = entity.indigenous_synonyms || [];
+        
+        // Build synonyms section with full details
+        const synonymsHtml = synonyms.length > 0 ? `
+            <div class="card-section">
+                <h4 class="card-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Indigenous Synonyms
+                </h4>
+                <div class="synonyms-list">
+                    ${synonyms.map(syn => `
+                        <div class="synonym-item">
+                            <div class="synonym-header">
+                                <span class="synonym-term">${escapeHtml(syn.term)}</span>
+                                <span class="synonym-lang">${escapeHtml(syn.language)}</span>
+                            </div>
+                            <div class="synonym-culture">${escapeHtml(syn.culture)}</div>
+                            <div class="synonym-definition">${escapeHtml(syn.definition)}</div>
+                            ${syn.context ? `<div class="synonym-context"><strong>Context:</strong> ${escapeHtml(syn.context)}</div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : '';
+        
+        // Brand insights section
+        const brandInsightsHtml = entity.brand_insights ? `
+            <div class="card-section">
+                <h4 class="card-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                    </svg>
+                    Brand Insights
+                </h4>
+                <p class="card-text">${escapeHtml(entity.brand_insights)}</p>
+            </div>
+        ` : '';
+        
+        // Traditional uses section
+        const traditionalUsesHtml = entity.traditional_uses ? `
+            <div class="card-section">
+                <h4 class="card-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                    Traditional Uses
+                </h4>
+                <p class="card-text">${escapeHtml(entity.traditional_uses)}</p>
+            </div>
+        ` : '';
+        
+        // Authenticity markers section
+        const authenticityHtml = entity.authenticity_markers && entity.authenticity_markers.length > 0 ? `
+            <div class="card-section">
+                <h4 class="card-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Authenticity Markers
+                </h4>
+                <ul class="authenticity-list">
+                    ${entity.authenticity_markers.map(marker => `<li>${escapeHtml(marker)}</li>`).join('')}
+                </ul>
+            </div>
+        ` : '';
+        
+        return `
+            <div class="entity-card">
+                <div class="entity-card-header">
+                    <span class="entity-name">${escapeHtml(entity.text)}</span>
+                    <span class="entity-badge">${escapeHtml(entity.category || 'ingredient')}</span>
+                </div>
+                <p class="entity-description">${escapeHtml(entity.description || 'No description available')}</p>
+                ${synonymsHtml}
+                ${brandInsightsHtml}
+                ${traditionalUsesHtml}
+                ${authenticityHtml}
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * Generate brand statement
  */
 async function generateBrandStatement(text, entities) {
     if (!entities || entities.length === 0) {
@@ -159,7 +320,6 @@ async function generateBrandStatement(text, entities) {
         return;
     }
     
-    // Show the section with loading state
     brandStatementSection.style.display = 'block';
     brandStatementContent.innerHTML = '<p class="loading">Generating enhanced description...</p>';
     
@@ -184,7 +344,6 @@ async function generateBrandStatement(text, entities) {
             currentBrandStatement = data.brand_statement;
             brandStatementContent.innerHTML = `<p class="enhanced-text">${escapeHtml(data.brand_statement)}</p>`;
             
-            // Log cache status
             if (data.cached) {
                 console.log('✓ Brand statement from cache');
             } else {
@@ -209,8 +368,7 @@ copyBrandBtn.addEventListener('click', async () => {
     try {
         await navigator.clipboard.writeText(currentBrandStatement);
         
-        // Visual feedback
-        const originalText = copyBrandBtn.innerHTML;
+        const originalHTML = copyBrandBtn.innerHTML;
         copyBrandBtn.innerHTML = `
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="20 6 9 17 4 12"></polyline>
@@ -219,29 +377,28 @@ copyBrandBtn.addEventListener('click', async () => {
         `;
         
         setTimeout(() => {
-            copyBrandBtn.innerHTML = originalText;
+            copyBrandBtn.innerHTML = originalHTML;
         }, 2000);
         
     } catch (error) {
         console.error('Failed to copy:', error);
-        alert('Failed to copy to clipboard');
     }
 });
 
 /**
- * Lint text by sending to /lint endpoint
+ * Lint text
  */
 async function lintText(text) {
     if (!text || text.trim().length < 3) {
         currentEntities = [];
         highlightLayer.innerHTML = escapeHtml(text);
-        displayEntities([]);
-        brandStatementSection.style.display = 'none'; // Hide brand statement
+        displayEntitiesSummary([]);
+        brandStatementSection.style.display = 'none';
         lastAnalyzedText = text;
+        updateCounts();
         return;
     }
     
-    // Skip if already analyzing or text hasn't changed
     if (isAnalyzing || text === lastAnalyzedText) {
         return;
     }
@@ -249,7 +406,6 @@ async function lintText(text) {
     isAnalyzing = true;
     lastAnalyzedText = text;
     
-    // Show analyzing indicator
     analyzeBtn.textContent = 'Analyzing...';
     analyzeBtn.disabled = true;
     
@@ -272,12 +428,12 @@ async function lintText(text) {
         if (data.success && data.entities) {
             currentEntities = data.entities;
             createHighlightOverlay(text, data.entities);
-            displayEntities(data.entities);
+            displayEntitiesSummary(data.entities);
+            updateCounts();
             
             // Generate brand statement
             generateBrandStatement(text, data.entities);
             
-            // Log cache status for debugging
             if (data.cached) {
                 console.log('✓ Result from cache');
             } else {
@@ -289,13 +445,19 @@ async function lintText(text) {
         console.error('Linting error:', error);
     } finally {
         isAnalyzing = false;
-        analyzeBtn.textContent = 'Analyze Text';
+        analyzeBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            Analyze Text
+        `;
         analyzeBtn.disabled = false;
     }
 }
 
 /**
- * Debounced lint function (1500ms delay - increased for better performance)
+ * Debounced lint function
  */
 const debouncedLint = debounce((text) => {
     lintText(text);
@@ -308,144 +470,32 @@ textEditor.addEventListener('input', () => {
     const text = textEditor.value;
     updateCounts();
     
-    // Keep existing highlights while typing (don't clear them)
-    // Only update if we don't have highlights yet
-    if (currentEntities.length === 0) {
-        highlightLayer.innerHTML = escapeHtml(text);
-    }
+    // Always update the highlight layer to show the text (without highlights)
+    highlightLayer.innerHTML = escapeHtml(text);
     
-    // Trigger debounced lint
-    debouncedLint(text);
+    // Don't auto-analyze - wait for button click
 });
 
 /**
- * Handle text editor keyup for real-time linting
- */
-textEditor.addEventListener('keyup', (e) => {
-    // Skip if it's just navigation keys
-    const navigationKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
-    if (navigationKeys.includes(e.key)) {
-        return;
-    }
-    
-    const text = textEditor.value;
-    debouncedLint(text);
-});
-
-/**
- * Analyze button handler (immediate analysis)
+ * Analyze button handler
  */
 analyzeBtn.addEventListener('click', async () => {
     const text = textEditor.value.trim();
     
     if (!text) {
-        alert('Please enter some text to analyze');
         return;
     }
     
-    analyzeBtn.textContent = 'Analyzing...';
-    analyzeBtn.disabled = true;
+    // Clear any pending debounced calls
+    clearTimeout(debounceTimer);
     
-    try {
-        // Cancel any pending debounced calls
-        clearTimeout(debounceTimer);
-        
-        await lintText(text);
-        
-    } catch (error) {
-        console.error('Analysis error:', error);
-        alert('Error analyzing text. Please try again.');
-    } finally {
-        analyzeBtn.textContent = 'Analyze Text';
-        analyzeBtn.disabled = false;
-    }
+    // Reset last analyzed text to force new analysis
+    lastAnalyzedText = '';
+    
+    await lintText(text);
 });
-
-/**
- * Display detected entities in sidebar
- */
-function displayEntities(entities) {
-    if (!entities || entities.length === 0) {
-        entitiesPanel.innerHTML = `
-            <div class="empty-state">
-                <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                    <path d="M2 17l10 5 10-5"/>
-                    <path d="M2 12l10 5 10-5"/>
-                </svg>
-                <p>No entities detected yet</p>
-                <p class="empty-hint">Type or paste text to see cultural insights</p>
-            </div>
-        `;
-        return;
-    }
-    
-    entitiesPanel.innerHTML = entities.map(entity => {
-        const synonymsHtml = entity.indigenous_synonyms && entity.indigenous_synonyms.length > 0
-            ? `
-                <div class="synonyms-section">
-                    <strong>Indigenous Synonyms:</strong>
-                    ${entity.indigenous_synonyms.map(syn => `
-                        <div class="synonym-item">
-                            <div class="synonym-header">
-                                <span class="synonym-term">${syn.term}</span>
-                                <span class="synonym-language">${syn.language}</span>
-                            </div>
-                            <span class="synonym-culture">${syn.culture}</span>
-                            <p class="synonym-definition">${syn.definition}</p>
-                            ${syn.context ? `<p class="synonym-context"><em>Context:</em> ${syn.context}</p>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            `
-            : '';
-        
-        const brandInsightsHtml = entity.brand_insights
-            ? `
-                <div class="insights-section">
-                    <strong>Brand Insights:</strong>
-                    <p>${entity.brand_insights}</p>
-                </div>
-            `
-            : '';
-        
-        const traditionalUsesHtml = entity.traditional_uses
-            ? `
-                <div class="traditional-section">
-                    <strong>Traditional Uses:</strong>
-                    <p>${entity.traditional_uses}</p>
-                </div>
-            `
-            : '';
-        
-        const authenticityHtml = entity.authenticity_markers && entity.authenticity_markers.length > 0
-            ? `
-                <div class="authenticity-section">
-                    <strong>Authenticity Markers:</strong>
-                    <ul class="authenticity-list">
-                        ${entity.authenticity_markers.map(marker => `<li>${marker}</li>`).join('')}
-                    </ul>
-                </div>
-            `
-            : '';
-        
-        return `
-            <div class="entity-card">
-                <div class="entity-header">
-                    <span class="entity-text">${entity.text}</span>
-                    <span class="entity-badge type-${entity.type}">${entity.category || entity.type}</span>
-                </div>
-                <div class="entity-description">${entity.description || 'No description available'}</div>
-                ${synonymsHtml}
-                ${brandInsightsHtml}
-                ${traditionalUsesHtml}
-                ${authenticityHtml}
-            </div>
-        `;
-    }).join('');
-}
 
 // Initialize
 updateCounts();
 
-console.log('Mangolint app.js loaded - Real-time linting enabled');
+console.log('Mangolint loaded - Hover over highlighted words for cultural insights');
