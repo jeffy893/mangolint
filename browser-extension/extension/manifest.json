@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "MangoLint",
+  "version": "0.1.0",
+  "description": "Enrich your writing with Indigenous language words",
+  "permissions": [],
+  "host_permissions": [
+    "http://localhost:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
