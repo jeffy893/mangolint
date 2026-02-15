@@ -69,6 +69,96 @@ body {
     overflow: hidden;
 }
 
+/* Brand Statement Section */
+.brand-statement-section {
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-bottom: 3px solid var(--primary-color);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.brand-statement-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.brand-statement-header h3 {
+    color: white;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.btn-copy {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-copy:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-copy svg {
+    width: 14px;
+    height: 14px;
+}
+
+.brand-statement-content {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    padding: 16px;
+    min-height: 60px;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+
+.brand-statement-content .loading {
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+}
+
+.brand-statement-content .enhanced-text {
+    font-weight: 500;
+}
+
+.brand-statement-content .indigenous-term {
+    color: var(--primary-color);
+    font-weight: 600;
+    font-style: italic;
+    position: relative;
+    cursor: help;
+}
+
+.brand-statement-content .indigenous-term:hover {
+    text-decoration: underline;
+}
+
 .editor-header {
     display: flex;
     justify-content: space-between;

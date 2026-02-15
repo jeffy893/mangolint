@@ -372,3 +372,50 @@ class MockBedrockLinter:
             'region': self.region_name,
             'service': 'Mock Bedrock (Demo Mode)'
         }
+    
+    def generate_brand_statement(self, original_text: str, entities: List[Dict[str, Any]]) -> str:
+        """
+        Generate an enhanced brand statement (mock version).
+        
+        Args:
+            original_text: The original product description
+            entities: List of detected entities with indigenous synonyms
+            
+        Returns:
+            Enhanced brand statement as a string
+        """
+        if not entities:
+            return original_text
+        
+        # Simple mock enhancement - replace ingredients with indigenous terms
+        enhanced = original_text
+        replacements = []
+        
+        for entity in entities:
+            original_term = entity.get('text', '')
+            synonyms = entity.get('indigenous_synonyms', [])
+            
+            if synonyms and original_term:
+                # Use the first synonym
+                indigenous_term = synonyms[0].get('term', '')
+                language = synonyms[0].get('language', '')
+                
+                if indigenous_term:
+                    # Create replacement with indigenous term
+                    replacement = f"{indigenous_term} ({original_term})"
+                    replacements.append((original_term, replacement, language))
+        
+        # Apply replacements
+        for original, replacement, language in replacements:
+            # Case-insensitive replacement
+            import re
+            pattern = re.compile(re.escape(original), re.IGNORECASE)
+            enhanced = pattern.sub(replacement, enhanced, count=1)
+        
+        # Add a cultural touch to the beginning if we made replacements
+        if replacements:
+            cultures = [lang for _, _, lang in replacements]
+            culture_str = cultures[0] if len(cultures) == 1 else "traditional"
+            enhanced = f"Celebrating {culture_str} heritage: {enhanced}"
+        
+        return enhanced

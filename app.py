@@ -158,6 +158,55 @@ def lint():
             'entities': []
         }), 500
 
+@app.route('/generate-brand-statement', methods=['POST'])
+def generate_brand_statement():
+    """
+    Generate an enhanced brand statement using indigenous terms.
+    """
+    try:
+        data = request.get_json()
+        text = data.get('text', '')
+        entities = data.get('entities', [])
+        
+        if not text or not entities:
+            return jsonify({'error': 'Text and entities required'}), 400
+        
+        # Check cache first
+        cache_key = get_cache_key(f"brand_statement_{text}")
+        cached_result = analysis_cache.get(cache_key)
+        if cached_result is not None:
+            return jsonify({
+                'success': True,
+                'brand_statement': cached_result,
+                'cached': True
+            })
+        
+        # Generate brand statement using Bedrock
+        try:
+            brand_statement = linter.generate_brand_statement(text, entities)
+            
+            # Cache the result
+            analysis_cache[cache_key] = brand_statement
+            
+            return jsonify({
+                'success': True,
+                'brand_statement': brand_statement,
+                'cached': False
+            })
+        except Exception as bedrock_error:
+            print(f"Bedrock error generating brand statement: {bedrock_error}")
+            return jsonify({
+                'success': False,
+                'error': 'Brand statement generation temporarily unavailable'
+            }), 500
+        
+    except Exception as e:
+        print(f"Error in /generate-brand-statement endpoint: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/model-info', methods=['GET'])
 def model_info():
     """

@@ -229,3 +229,94 @@ TEXT TO ANALYZE:
             'region': self.region_name,
             'service': 'Amazon Bedrock'
         }
+    
+    def generate_brand_statement(self, original_text: str, entities: List[Dict[str, Any]]) -> str:
+        """
+        Generate an enhanced brand statement that integrates indigenous terms.
+        
+        Args:
+            original_text: The original product description
+            entities: List of detected entities with indigenous synonyms
+            
+        Returns:
+            Enhanced brand statement as a string
+        """
+        if not entities:
+            return original_text
+        
+        # Build context about the entities
+        entity_context = []
+        for entity in entities:
+            synonyms = entity.get('indigenous_synonyms', [])
+            if synonyms:
+                # Get the first synonym as the primary one to use
+                primary_synonym = synonyms[0]
+                entity_context.append({
+                    'original': entity.get('text', ''),
+                    'indigenous_term': primary_synonym.get('term', ''),
+                    'language': primary_synonym.get('language', ''),
+                    'culture': primary_synonym.get('culture', ''),
+                    'context': primary_synonym.get('context', '')
+                })
+        
+        # Construct prompt for brand statement generation
+        prompt = f"""You are a creative brand copywriter specializing in culturally authentic product descriptions.
+
+TASK: Rewrite the following product description to be more expressive and culturally rich by integrating indigenous/traditional terms where appropriate.
+
+ORIGINAL TEXT:
+{original_text}
+
+INDIGENOUS TERMS TO INTEGRATE:
+{json.dumps(entity_context, indent=2)}
+
+GUIDELINES:
+1. Maintain the core message and intent of the original text
+2. Naturally integrate indigenous terms where they add authenticity and cultural depth
+3. Include the indigenous term in italics followed by the English term in parentheses when first introduced
+4. Make the description more evocative and expressive
+5. Keep it concise and brand-appropriate (2-4 sentences)
+6. Emphasize cultural heritage and authenticity
+7. Make it sound premium and appealing
+
+EXAMPLE:
+Original: "Our pizza uses fresh mushrooms, peppers, and onions"
+Enhanced: "Our artisan pizza celebrates the earth's bounty with fresh hongos (mushrooms), vibrant chiles (peppers), and aromatic cebollas (onions) - a harmonious blend of traditional ingredients crafted with cultural reverence."
+
+Return ONLY the enhanced brand statement text, no explanations or additional commentary."""
+
+        try:
+            # Prepare the request body for Claude 3
+            request_body = {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 500,
+                "temperature": 0.7,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            }
+            
+            # Invoke the model
+            response = self.bedrock_runtime.invoke_model(
+                modelId=self.model_id,
+                body=json.dumps(request_body)
+            )
+            
+            # Parse the response
+            response_body = json.loads(response['body'].read())
+            
+            # Extract the text content from Claude's response
+            content = response_body.get('content', [])
+            if content and len(content) > 0:
+                brand_statement = content[0].get('text', original_text)
+            else:
+                brand_statement = original_text
+            
+            return brand_statement.strip()
+            
+        except Exception as e:
+            print(f"Error generating brand statement: {e}")
+            return original_text

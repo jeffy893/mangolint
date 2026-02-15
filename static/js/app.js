@@ -9,12 +9,16 @@ const charCount = document.getElementById('charCount');
 const wordCount = document.getElementById('wordCount');
 const analyzeBtn = document.getElementById('analyzeBtn');
 const entitiesPanel = document.getElementById('entitiesPanel');
+const brandStatementSection = document.getElementById('brandStatementSection');
+const brandStatementContent = document.getElementById('brandStatementContent');
+const copyBrandBtn = document.getElementById('copyBrandBtn');
 
 // Store current entities for reference
 let currentEntities = [];
 let debounceTimer = null;
 let lastAnalyzedText = ''; // Cache last analyzed text to avoid duplicate calls
 let isAnalyzing = false; // Prevent concurrent API calls
+let currentBrandStatement = ''; // Store current brand statement for copying
 
 /**
  * Debounce function - delays execution until after wait time
@@ -147,6 +151,84 @@ function scrollToEntity(entityText) {
 }
 
 /**
+ * Generate brand statement from analyzed entities
+ */
+async function generateBrandStatement(text, entities) {
+    if (!entities || entities.length === 0) {
+        brandStatementSection.style.display = 'none';
+        return;
+    }
+    
+    // Show the section with loading state
+    brandStatementSection.style.display = 'block';
+    brandStatementContent.innerHTML = '<p class="loading">Generating enhanced description...</p>';
+    
+    try {
+        const response = await fetch('/generate-brand-statement', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text, entities })
+        });
+        
+        if (!response.ok) {
+            console.error('Brand statement generation failed:', response.statusText);
+            brandStatementContent.innerHTML = '<p class="loading">Unable to generate brand statement</p>';
+            return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.brand_statement) {
+            currentBrandStatement = data.brand_statement;
+            brandStatementContent.innerHTML = `<p class="enhanced-text">${escapeHtml(data.brand_statement)}</p>`;
+            
+            // Log cache status
+            if (data.cached) {
+                console.log('✓ Brand statement from cache');
+            } else {
+                console.log('→ Fresh brand statement generated');
+            }
+        } else {
+            brandStatementContent.innerHTML = '<p class="loading">Unable to generate brand statement</p>';
+        }
+        
+    } catch (error) {
+        console.error('Brand statement generation error:', error);
+        brandStatementContent.innerHTML = '<p class="loading">Error generating brand statement</p>';
+    }
+}
+
+/**
+ * Copy brand statement to clipboard
+ */
+copyBrandBtn.addEventListener('click', async () => {
+    if (!currentBrandStatement) return;
+    
+    try {
+        await navigator.clipboard.writeText(currentBrandStatement);
+        
+        // Visual feedback
+        const originalText = copyBrandBtn.innerHTML;
+        copyBrandBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Copied!
+        `;
+        
+        setTimeout(() => {
+            copyBrandBtn.innerHTML = originalText;
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Failed to copy:', error);
+        alert('Failed to copy to clipboard');
+    }
+});
+
+/**
  * Lint text by sending to /lint endpoint
  */
 async function lintText(text) {
@@ -154,6 +236,7 @@ async function lintText(text) {
         currentEntities = [];
         highlightLayer.innerHTML = escapeHtml(text);
         displayEntities([]);
+        brandStatementSection.style.display = 'none'; // Hide brand statement
         lastAnalyzedText = text;
         return;
     }
@@ -190,6 +273,9 @@ async function lintText(text) {
             currentEntities = data.entities;
             createHighlightOverlay(text, data.entities);
             displayEntities(data.entities);
+            
+            // Generate brand statement
+            generateBrandStatement(text, data.entities);
             
             // Log cache status for debugging
             if (data.cached) {
