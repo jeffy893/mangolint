@@ -1,0 +1,192 @@
+# Mangolint Example Usages
+# Copy and paste these examples into the text editor to test the tool
+
+# ============================================================================
+# EXAMPLE 1: Single Ingredient
+# ============================================================================
+mango
+
+# Expected: Indigenous synonyms from Portuguese, Hindi, Tamil, Tagalog
+# Context: Ripeness stages (green vs ripe), preparation methods
+
+
+# ============================================================================
+# EXAMPLE 2: Spice Blend
+# ============================================================================
+Our signature tea blend contains ginger, cardamom, and black pepper.
+
+# Expected: 3 spices analyzed with South Asian cultural context
+# Context: Ayurvedic uses, culinary vs medicinal applications
+
+
+# ============================================================================
+# EXAMPLE 3: Skincare Product Description
+# ============================================================================
+Our organic skincare line uses mango butter, turmeric extract, and coconut oil for natural radiance.
+
+# Expected: 3 ingredients with beauty/wellness context
+# Context: Traditional beauty rituals, Ayurvedic applications
+
+
+# ============================================================================
+# EXAMPLE 4: Food Recipe
+# ============================================================================
+Traditional recipe includes corn masa, vanilla beans, cinnamon, and honey.
+
+# Expected: 4 ingredients with Mesoamerican and global origins
+# Context: Sacred crops, traditional preparation methods
+
+
+# ============================================================================
+# EXAMPLE 5: Beverage Description
+# ============================================================================
+Refreshing drink made with fresh coconut water, lime, and mint leaves.
+
+# Expected: 3 ingredients with tropical and Mediterranean origins
+# Context: Young vs mature coconut, fresh vs dried herbs
+
+
+# ============================================================================
+# EXAMPLE 6: Complex Product
+# ============================================================================
+Artisan chocolate bar infused with chili pepper, sea salt, and cacao nibs from Ecuador.
+
+# Expected: Multiple ingredients with Latin American heritage
+# Context: Ceremonial cacao, traditional spice combinations
+
+
+# ============================================================================
+# EXAMPLE 7: Herbal Supplement
+# ============================================================================
+Natural supplement containing ashwagandha, holy basil, and ginger root.
+
+# Expected: Ayurvedic herbs with Sanskrit origins
+# Context: Adaptogenic properties, traditional doshas
+
+
+# ============================================================================
+# EXAMPLE 8: Grain-Based Product
+# ============================================================================
+Ancient grain bowl with quinoa, amaranth, and chia seeds.
+
+# Expected: Andean superfoods with Quechua/Aztec origins
+# Context: Sacred grains, nutritional significance
+
+
+# ============================================================================
+# EXAMPLE 9: Tropical Fruit Mix
+# ============================================================================
+Exotic fruit salad featuring papaya, guava, and passion fruit.
+
+# Expected: Tropical fruits with Latin American/Caribbean origins
+# Context: Ripeness indicators, traditional uses
+
+
+# ============================================================================
+# EXAMPLE 10: Spice Market Description
+# ============================================================================
+The market offers saffron, cardamom, cumin, and fenugreek from around the world.
+
+# Expected: 4 spices with Middle Eastern, South Asian origins
+# Context: Trade routes, culinary traditions, medicinal uses
+
+
+# ============================================================================
+# EXAMPLE 11: Natural Dye Product
+# ============================================================================
+Natural fabric dye made from indigo, turmeric, and madder root.
+
+# Expected: Traditional dye plants with textile heritage
+# Context: Color variations, mordant processes
+
+
+# ============================================================================
+# EXAMPLE 12: Fermented Foods
+# ============================================================================
+Probiotic blend with kimchi spices: gochugaru, ginger, and garlic.
+
+# Expected: Korean fermentation ingredients
+# Context: Traditional preservation methods
+
+
+# ============================================================================
+# EXAMPLE 13: Medicinal Tea
+# ============================================================================
+Healing tea with chamomile, lavender, and lemon balm.
+
+# Expected: European/Mediterranean herbs
+# Context: Traditional herbal medicine, calming properties
+
+
+# ============================================================================
+# EXAMPLE 14: Baking Ingredients
+# ============================================================================
+Artisan bread made with wheat flour, sesame seeds, and nigella seeds.
+
+# Expected: Ancient grains and seeds with Middle Eastern origins
+# Context: Traditional bread-making, cultural significance
+
+
+# ============================================================================
+# EXAMPLE 15: Superfood Smoothie
+# ============================================================================
+Power smoothie with acai, spirulina, and maca powder.
+
+# Expected: Modern superfoods with indigenous origins
+# Context: Traditional uses vs modern wellness trends
+
+
+# ============================================================================
+# EXAMPLE 16: Aromatic Description
+# ============================================================================
+Fragrance notes of sandalwood, jasmine, and bergamot.
+
+# Expected: Aromatic ingredients with perfumery heritage
+# Context: Essential oil extraction, cultural significance
+
+
+# ============================================================================
+# EXAMPLE 17: Pickling Spices
+# ============================================================================
+Pickle brine seasoned with mustard seeds, dill, and coriander.
+
+# Expected: Preservation spices with European/Asian origins
+# Context: Fermentation traditions, flavor profiles
+
+
+# ============================================================================
+# EXAMPLE 18: Energy Bar
+# ============================================================================
+Natural energy bar with dates, almonds, and cacao.
+
+# Expected: Middle Eastern and Latin American ingredients
+# Context: Traditional energy foods, nomadic cultures
+
+
+# ============================================================================
+# EXAMPLE 19: Curry Blend
+# ============================================================================
+Authentic curry powder with turmeric, coriander, cumin, and fenugreek.
+
+# Expected: South Asian spice blend
+# Context: Regional variations, traditional grinding methods
+
+
+# ============================================================================
+# EXAMPLE 20: Salad Dressing
+# ============================================================================
+Vinaigrette made with olive oil, balsamic vinegar, and oregano.
+
+# Expected: Mediterranean ingredients
+# Context: Traditional olive cultivation, herb preservation
+
+
+# ============================================================================
+# TESTING TIPS:
+# ============================================================================
+# 1. Copy one example at a time
+# 2. Paste into the Mangolint text editor
+# 3. Wait 500ms for automatic analysis OR click "Analyze Text"
+# 4. Click underlined words to see detailed cultural insights
+# 5. Check sidebar for indigenous synonyms and brand insights
+# 6. Compare results across different ingredient categories

@@ -1,0 +1,75 @@
+================================================================================
+MANGOLINT TEST REPORT
+================================================================================
+Generated: 2026-02-15 11:48:17
+Duration: 0.49 seconds
+
+SUMMARY
+--------------------------------------------------------------------------------
+Tests Run: 12
+Successes: 12
+Failures: 0
+Errors: 0
+Skipped: 0
+
+STATUS: ✅ ALL TESTS PASSED
+
+DETAILED OUTPUT
+--------------------------------------------------------------------------------
+test_analyze_endpoint_no_text (test_app.TestFlaskApp)
+Test analyze endpoint without text ... ok
+test_health_endpoint (test_app.TestFlaskApp)
+Test health check endpoint ... ok
+test_index_route (test_app.TestFlaskApp)
+Test main index route ... ok
+test_lint_endpoint_empty_text (test_app.TestFlaskApp)
+Test lint endpoint with empty text ... ok
+test_lint_endpoint_invalid_json (test_app.TestFlaskApp)
+Test lint endpoint with invalid JSON ... ok
+test_lint_endpoint_short_text (test_app.TestFlaskApp)
+Test lint endpoint with short text (< 3 chars) ... ok
+test_model_info_endpoint (test_app.TestFlaskApp)
+Test model info endpoint ... ok
+test_analyze_text_with_mock (test_linter.TestBedrockLinter)
+Test analyze_text with mocked Bedrock response ... ok
+test_construct_prompt (test_linter.TestBedrockLinter)
+Test prompt construction ... ok
+test_empty_text_handling (test_linter.TestBedrockLinter)
+Test handling of empty text ... ok
+test_get_model_info (test_linter.TestBedrockLinter)
+Test model info retrieval ... ok
+test_initialization (test_linter.TestBedrockLinter)
+Test linter initialization ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.033s
+
+OK
+
+
+TEST COVERAGE
+--------------------------------------------------------------------------------
+✓ Unit Tests (linter.py)
+  - Initialization
+  - Prompt construction
+  - Empty text handling
+  - Mocked Bedrock analysis
+  - Model info retrieval
+
+✓ Integration Tests (app.py)
+  - Index route
+  - Health endpoint
+  - Model info endpoint
+  - Lint endpoint (empty, short text)
+  - Analyze endpoint validation
+  - Invalid JSON handling
+
+RECOMMENDATIONS
+--------------------------------------------------------------------------------
+✓ All tests passing - ready for deployment
+✓ Consider adding end-to-end tests with real Bedrock API
+✓ Add performance benchmarks for analysis speed
+
+================================================================================
+END OF REPORT
+================================================================================
